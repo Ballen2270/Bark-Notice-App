@@ -38,8 +38,8 @@ COPY --from=backend-build /app/backend/target/*.jar /app/app.jar
 # 复制nginx配置
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# 安装OpenJDK 21和netcat
-RUN apk add --no-cache openjdk21-jre-headless netcat-openbsd
+# 安装OpenJDK 21、netcat和字体（验证码AWT画图需要，headless JRE不带任何字体）
+RUN apk add --no-cache fontconfig ttf-dejavu openjdk21-jre-headless netcat-openbsd
 
 # 创建目录用于存放堆转储文件
 RUN mkdir -p /app/logs && \
