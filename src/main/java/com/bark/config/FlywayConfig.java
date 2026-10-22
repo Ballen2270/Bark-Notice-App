@@ -21,7 +21,6 @@ public class FlywayConfig {
      * Flyway 配置
      */
     @Bean
-    @Autowired
     public Flyway flyway(DataSource dataSource) {
         // 优先从环境变量获取locations，如果没配置则使用默认的mysql
         String locations = environment.getProperty("flyway.locations", "classpath:db/migration/mysql");

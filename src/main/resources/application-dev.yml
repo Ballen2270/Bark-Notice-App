@@ -4,12 +4,13 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/notice-api?useUnicode=true&characterEncoding=UTF8&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true
     username: root
     password: 'root'
-  redis:
-    host: 127.0.0.1
-    port: 6379
-    password: AIzaSyCxgkOuuhEqLgzeUeqETl
-    database: 3
-    timeout: 5000
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password: AIzaSyCxgkOuuhEqLgzeUeqETl
+      database: 3
+      timeout: 5000
 
 api:
   url: http://192.168.31.78:29828

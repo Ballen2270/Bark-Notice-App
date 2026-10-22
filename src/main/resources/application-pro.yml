@@ -4,12 +4,13 @@ spring:
     url: jdbc:mysql://${MYSQL_HOST_NAME}:${MYSQL_PORT}/notice-api?useUnicode=true&characterEncoding=UTF8&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true
     username: ${MYSQL_USERNAME}
     password: ${MYSQL_PASSWORD}
-  redis:
-    host: ${REDIS_URL}
-    port: ${REDIS_PORT}
-    password: ${REDIS_PASSWORD}
-    database: 3
-    timeout: 5000
+  data:
+    redis:
+      host: ${REDIS_URL}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+      database: 3
+      timeout: 5000
 api:
   url: ${BARK_SERVER_URL}
   token: ${BARK_SERVER_TOKEN}

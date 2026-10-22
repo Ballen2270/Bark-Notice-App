@@ -2,7 +2,7 @@ package com.bark.dto.jellyfin;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * @Author Ballen  2024/11/27 10:33

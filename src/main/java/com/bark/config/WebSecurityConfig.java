@@ -5,9 +5,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
@@ -15,8 +15,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  */
 @Configuration
 @EnableWebSecurity
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-    
+public class WebSecurityConfig {
+
     /**
      * 配置密码加密器
      */
@@ -24,7 +24,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
     /**
      * 配置JWT认证过滤器
      */
@@ -32,31 +32,29 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter();
     }
-    
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+
+    /**
+     * 配置安全过滤链
+     */
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
             // 禁用CSRF
-            .csrf().disable()
+            .csrf(csrf -> csrf.disable())
             // 不创建会话
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // 定义请求授权规则
-            .authorizeRequests()
-            // 不需认证的接口
-            .antMatchers("/auth/login",
-                    "/auth/captcha/**", 
-                    "/auth/checkInit", "/auth/initRegister",
-                    "/notice/**", "/actuator/**",
-                    "/push/**","/status/endpoint").permitAll()
-            // 所有其他请求需要认证
-            .anyRequest().authenticated();
-        
-        // 添加JWT过滤器
-        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
-        
-        // 配置异常处理器
-        http.exceptionHandling()
+            .authorizeHttpRequests(auth -> auth
+                // 不需认证的接口
+                .requestMatchers("/auth/login",
+                        "/auth/captcha/**",
+                        "/auth/checkInit", "/auth/initRegister",
+                        "/notice/**", "/actuator/**",
+                        "/push/**", "/status/endpoint").permitAll()
+                // 所有其他请求需要认证
+                .anyRequest().authenticated())
+            // 配置异常处理器
+            .exceptionHandling(ex -> ex
                 // 未认证处理
                 .authenticationEntryPoint((request, response, e) -> {
                     response.setContentType("application/json;charset=UTF-8");
@@ -68,6 +66,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                     response.setContentType("application/json;charset=UTF-8");
                     response.setStatus(403);
                     response.getWriter().write("{\"code\":\"999999\",\"msg\":\"无权限访问\",\"data\":null}");
-                });
+                }));
+
+        // 添加JWT过滤器
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
-} 
+}

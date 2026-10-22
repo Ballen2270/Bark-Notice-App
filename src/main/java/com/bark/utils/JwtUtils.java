@@ -2,10 +2,14 @@ package com.bark.utils;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,13 +19,26 @@ import java.util.Map;
  */
 @Component
 public class JwtUtils {
-    
+
     @Value("${jwt.secret:barkSecretKey}")
     private String secret;
-    
+
     @Value("${jwt.expiration:86400}")
     private Long expiration; // 默认1天
-    
+
+    /**
+     * 由配置的secret派生HS512签名密钥
+     * jjwt 0.12+ 要求HS512密钥至少64字节，这里对任意长度的secret做SHA-512摘要，保证密钥长度恒定
+     */
+    private SecretKey signingKey() {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-512").digest(secret.getBytes(StandardCharsets.UTF_8));
+            return new SecretKeySpec(digest, "HmacSHA512");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-512 algorithm not available", e);
+        }
+    }
+
     /**
      * 生成JWT令牌
      * @param userId 用户ID
@@ -32,15 +49,15 @@ public class JwtUtils {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("username", username);
-        
+
         return Jwts.builder()
-                .setClaims(claims)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000))
-                .signWith(SignatureAlgorithm.HS512, secret)
+                .claims(claims)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration * 1000))
+                .signWith(signingKey())
                 .compact();
     }
-    
+
     /**
      * 从JWT令牌中获取用户ID
      * @param token JWT令牌
@@ -48,9 +65,11 @@ public class JwtUtils {
      */
     public Long getUserIdFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
-        return claims.get("userId", Long.class);
+        // JSON反序列化后数值可能是Integer，统一经Number转换避免ClassCastException
+        Number userId = claims.get("userId", Number.class);
+        return userId == null ? null : userId.longValue();
     }
-    
+
     /**
      * 从JWT令牌中获取用户名
      * @param token JWT令牌
@@ -60,7 +79,7 @@ public class JwtUtils {
         Claims claims = getClaimsFromToken(token);
         return claims.get("username", String.class);
     }
-    
+
     /**
      * 验证JWT令牌是否有效
      * @param token JWT令牌
@@ -75,7 +94,7 @@ public class JwtUtils {
             return false;
         }
     }
-    
+
     /**
      * 从JWT令牌中获取负载
      * @param token JWT令牌
@@ -83,8 +102,9 @@ public class JwtUtils {
      */
     private Claims getClaimsFromToken(String token) {
         return Jwts.parser()
-                .setSigningKey(secret)
-                .parseClaimsJws(token)
-                .getBody();
+                .verifyWith(signingKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
-} 
+}

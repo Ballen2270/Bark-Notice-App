@@ -1,13 +1,11 @@
 package com.bark.dto;
 
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * @Author Ballen  2024/10/23 15:42
@@ -23,6 +21,5 @@ public class ApiParam {
     private String group;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JSONField(serialzeFeatures = SerializerFeature.WriteNullStringAsEmpty)
     private String url;
 }

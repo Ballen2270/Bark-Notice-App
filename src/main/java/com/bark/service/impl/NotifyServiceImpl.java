@@ -1,6 +1,6 @@
 package com.bark.service.impl;
 
-import com.alibaba.fastjson.JSON;
+import tools.jackson.databind.json.JsonMapper;
 import com.bark.domain.DeviceConf;
 import com.bark.domain.NoticeLog;
 import com.bark.dto.ApiParam;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,6 +47,11 @@ public class NotifyServiceImpl implements NotifyService {
     public static final Integer API_SUCCESS = 200;
 
     /**
+     * 用于加密前序列化通知参数
+     */
+    private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
+
+    /**
      * 通知设备
      *
      * @param deviceKey
@@ -67,8 +72,8 @@ public class NotifyServiceImpl implements NotifyService {
         noticeLog.setGroup(param.getGroup());
         String res= null;
         try{
-            String ciphertext = aesCodec.encrypt(JSON.toJSONString(param), key, iv);
-            res = restTemplate.postForObject(url, JSON.toJSON(new NoticeApiParam(ciphertext, iv)), String.class);
+            String ciphertext = aesCodec.encrypt(JSON_MAPPER.writeValueAsString(param), key, iv);
+            res = restTemplate.postForObject(url, new NoticeApiParam(ciphertext, iv), String.class);
             log.info("notice deviceKey:{}, res:{}", deviceKey, res);
             noticeLog.setResult(res);
         }catch (Exception e){
