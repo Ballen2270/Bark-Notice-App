@@ -5,17 +5,13 @@ COPY frontend/package*.json ./
 # 清理缓存并重新安装依赖
 RUN rm -rf node_modules && \
     npm cache clean --force && \
-    npm install -g npm@10.2.4 && \
-    npm install
-
-# 强制安装指定版本的 esbuild
-RUN npm install esbuild@0.17.19
+    npm ci
 
 COPY frontend/ .
 RUN npm run build
 
-# 构建后端项目
-FROM maven:3.8.6-openjdk-8-slim AS backend-build
+# 构建后端项目（Spring Boot 4.1 需要 JDK 21）
+FROM maven:3.9-eclipse-temurin-21 AS backend-build
 WORKDIR /app/backend
 
 # 设置Maven和Java选项
@@ -42,8 +38,8 @@ COPY --from=backend-build /app/backend/target/*.jar /app/app.jar
 # 复制nginx配置
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# 安装OpenJDK 8和netcat
-RUN apk add --no-cache openjdk8-jre netcat-openbsd
+# 安装OpenJDK 21和netcat
+RUN apk add --no-cache openjdk21-jre-headless netcat-openbsd
 
 # 创建目录用于存放堆转储文件
 RUN mkdir -p /app/logs && \
